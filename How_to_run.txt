@@ -1,0 +1,8 @@
+1) Place glove.6B.300d.txt in data/glove.6B
+2) cd data
+3) Put dress_3_45.train.txt, jean_3_45.train.txt, dress_3_45.test.txt, jean_3_45.test.txt in this(data) folder.
+4) run train_file_generator.py, test_files_generator.py, Validation_File_generator.py 
+5) cd ..
+6) run build_data.py then utils.py
+7) Run train.py to train the model
+8) Run evaluate.py to check the results over test data.

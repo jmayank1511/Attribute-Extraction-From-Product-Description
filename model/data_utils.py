@@ -96,34 +96,26 @@ class FKDataset(object):
         return self.length
 
 class DatasetForCouplingLoss(object):
-    """Class that iterates over CoNLL Dataset
-
-    __iter__ method yields a tuple (words, tags)
-        words: list of raw words
-        tags: list of raw tags
-
-    If processing_word and processing_tag are not None,
-    optional preprocessing is applied
-
-    """
-    def __init__(self, filename, processing_word=None, processing_tag=None,
+    def __init__(self, filename_lambda_dress, filename_lambda_jean, processing_word=None, processing_tag=None,
                  max_iter=None, kValofKmer=None):
         """
         Args:
-            filename: path to the file
+            filenames: path to the lambda files created by generateDatasetFilesForCoupling.py
             processing_words: (optional) function that takes a word as input
             processing_tags: (optional) function that takes a tag as input
             max_iter: (optional) max number of sentences to yield
 
         """
-        self.filename = filename
+        self.filename_lambda_dress = filename_lambda_dress
+        self.filename_lambda_jean = filename_lambda_jean
         self.processing_word = processing_word
         self.processing_tag = processing_tag
         self.max_iter = max_iter
+        self.KValofKmer = kValofKmer
         self.length = None
-        self.kValofKmer = kValofKmer
 
-    def findKmers(self, tag, k):
+    def findKmers(self, tag):
+        k = self.KValofKmer
         if(tag=='O'):
             return ['O']
         kmers =[]
@@ -137,103 +129,182 @@ class DatasetForCouplingLoss(object):
         description of data sent by this method:
         returns a tuple : word,tag
         word:
-            a list of 4 lines:
-                line1: words of dress_example
-                line2: dress_sent_no
-                line3: dress_central_tag_id
-                line3: words of jean_example
-                line4: jean_sent_no
-                line6: jean_central_tag_id
-                line7: dress_central_tag_pos
-                line8: jean_central_tag_pos
-                line9: kmers of tag_dress | for eg: if tag is 'abc' and k for k-mer is 2 then return ['ab','bc']
-                line10: kmers of tag_jean
+            word_left_dress       #0
+            dress_left_sent_no    #1
+            dress_left_tag_pos    #2
+            word_left_jean        #3
+            jean_left_sent_no     #4
+            jean_left_tag_pos     #5
+            words_right_dress     #6
+            dress_right_sent_no   #7
+            dress_right_tag_pos   #8
+            words_right_jean     #9
+            jean_right_sent_no   #10
+            jean_right_tag_pos   #11
         tag:
-            a list of 2 lines:
-                line1: tag list of dress_example
-                line2: tag list of jean_example
+            tag_left_dress       #0
+            tag_left_jean        #1
+            tag_right_dress      #2
+            tag_right_jean       #3
         '''
-        lambda_file = "data/"+self.filename
+        lambda_file_dress = self.filename_lambda_dress
+        lambda_file_jean = self.filename_lambda_jean
         import pickle
-        with open(lambda_file,"rb") as o:
-            lamdas = pickle.load(o)
+        with open(lambda_file_dress,"rb") as o:
+            lambda_dress = pickle.load(o)
+        with open(lambda_file_jean,"rb") as o:
+            lambda_jean = pickle.load(o)
         with  open("data/jean_sent_raw_in_list.pkl","rb")as o:
             jean_sent_list = pickle.load(o)
         with open("data/dress_sent_raw_in_list.pkl","rb") as o:
             dress_sent_list =pickle.load(o)
-        with open("data/windowVectors_dress.pkl","rb") as o:
-            windowVectors_dress =pickle.load(o)
-        with open("data/windowVectors_jean.pkl","rb") as o:
-            windowVectors_jean =pickle.load(o)
+        # with open("data/windowVectors_dress.pkl","rb") as o:
+        #     windowVectors_dress =pickle.load(o)
+        # with open("data/windowVectors_jean.pkl","rb") as o:
+        #     windowVectors_jean =pickle.load(o)
        
         from model.config import Config
-        import pickle
-        with open("tags.pkl","rb")as o:
-            tagsList = pickle.load(o)
         idx=0
         config = Config() 
-        for ix,line in enumerate(lamdas):     
+        filetag =  open(config.filename_tags)
+        tags_uncleaned = filetag.readlines()
+        tagList = []
+        filetag.close()
+        for i in tags_uncleaned:
+            tagList.append(i.strip())
+        coupling_data = zip(lambda_dress,lambda_jean)
+        for ix,line in enumerate(coupling_data):     
             if(idx==config.num_of_examples_for_coupling):
                 break 
-            line = line.strip().split(" ")
-            dress_sent_no = line[7]
-            dress_tag_id = tagsList.index(line[3])
-            dress_tag_pos = int(line[6])
-            jean_sent_no = line[15].split("\t")[0].strip()
-            jean_tag_id = tagsList.index(line[11])
-            jean_tag_pos = int(line[14])
-            if(int(dress_sent_no),int(dress_tag_pos))not in windowVectors_dress:
-                continue
-            if(int(jean_sent_no),int(jean_tag_pos))not in windowVectors_jean:
-                continue
-            idx+=1
-            dress_tag = line[3]
-            jean_tag = line[11]
-            kmer_dress = self.findKmers(dress_tag,self.kValofKmer)
-            kmer_jean = self.findKmers(jean_tag,self.kValofKmer)
-            dress_ex = dress_sent_list[int(dress_sent_no)]
-            jean_ex = jean_sent_list[int(jean_sent_no)]
-            word_dress,word_jean,tag_dress,tag_jean = [],[],[],[] # contain data for one example only
-            dress_ex = dress_ex.split("\n")
-            for word_tag_pair in dress_ex:
-                word_tag_pair = word_tag_pair.split(" ")
-                if(len(word_tag_pair)==2):
-                    word,tag = word_tag_pair[0].strip(),word_tag_pair[-1].strip()
-                    if self.processing_word is not None:
-                        word = self.processing_word(word)
-                    if self.processing_tag is not None:
-                        tag = self.processing_tag(tag)
-                    word_dress += [word]
-                    tag_dress += [tag]
-            jean_ex = jean_ex.split("\n")
-            for word_tag_pair in jean_ex: 
-                word_tag_pair = word_tag_pair.split(" ") 
-                if(len(word_tag_pair)==2): 
-                    word,tag = word_tag_pair[0],word_tag_pair[-1]
-                    #print(word,tag)
-                    if self.processing_word is not None:
-                        word = self.processing_word(word)
-                    if self.processing_tag is not None:
-                        tag = self.processing_tag(tag)
-                    word_jean += [word]
-                    tag_jean += [tag]
+            left = line[0]
+            right = line[1]                              #    0             1            2          3       4             5             6          7
+            #left and right are list of list : sublist == dsentNo, dcentralWordPos, dcentralTag, dvector, jsentNo, jcentralWordPos, jcentralTag, jvector
+            for i in range(config.batch_size):
+                dress_left_tag = left[i][2]
+                dress_left_tag_id = tagList.index(dress_left_tag)
+                jean_left_tag = left[i][6]
+                jean_left_tag_id = tagList.index(jean_left_tag)
+                dress_right_tag = right[i][2]
+                dress_right_tag_id = tagList.index(dress_right_tag)
+                jean_right_tag = right[i][6]
+                jean_right_tag_id = tagList.index(jean_right_tag)
+                dress_left_sentno = left[i][0]
+                jean_left_sentno = left[i][4]
+                dress_right_sentno = right[i][0]
+                jean_right_sentno = right[i][4]
+                dress_left_tag_pos = left[i][1]
+                jean_left_tag_pos = left[i][5]
+                dress_right_tag_pos = right[i][1]
+                jean_right_tag_pos = right[i][5]
+                dress_left_w_vector = left[i][3]
+                jean_left_w_vector = left[i][7]
+                dress_right_w_vector = right[i][3]
+                jean_right_w_vector = right[i][7]
+                kmer_left_dress = self.findKmers(dress_left_tag)
+                kmer_left_jean = self.findKmers(jean_left_tag)
+                kmer_right_dress = self.findKmers(dress_right_tag)
+                kmer_right_jean = self.findKmers(jean_right_tag)
+                dress_left_ex, jean_left_ex, dress_right_ex, jean_right_ex = 1,1,1,1
+                try:
+                    dress_left_ex  = dress_sent_list[dress_left_sentno]
+                    jean_left_ex  = dress_sent_list[jean_left_sentno]
+                    dress_right_ex  = dress_sent_list[dress_right_sentno]
+                    jean_right_ex  = dress_sent_list[jean_right_sentno]
+                except:
+                    continue
+                word_left_dress, word_left_jean = [], []
+                word_right_dress, word_right_jean = [], []
+                tag_left_dress, tag_left_jean = [],[]
+                tag_right_dress, tag_right_jean = [], [] # all of these contain data for one example only
+                
+                dress_left_ex = dress_left_ex.split("\n")
+                if(len(dress_left_ex)<dress_left_tag_pos):
+                    continue
+                for word_tag_pair in dress_left_ex:
+                    word_tag_pair = word_tag_pair.split(" ")
+                    if(len(word_tag_pair)==2):
+                        word,tag = word_tag_pair[0].strip(),word_tag_pair[-1].strip()
+                        if self.processing_word is not None:
+                            word = self.processing_word(word)
+                        if self.processing_tag is not None:
+                            tag = self.processing_tag(tag)
+                        word_left_dress += [word]
+                        tag_left_dress += [tag]
+                
+                jean_left_ex = jean_left_ex.split("\n")
+                if(len(jean_left_ex)<jean_left_tag_pos):
+                    continue
+                for word_tag_pair in jean_left_ex:
+                    word_tag_pair = word_tag_pair.split(" ")
+                    if(len(word_tag_pair)==2):
+                        word,tag = word_tag_pair[0].strip(),word_tag_pair[-1].strip()
+                        if self.processing_word is not None:
+                            word = self.processing_word(word)
+                        if self.processing_tag is not None:
+                            tag = self.processing_tag(tag)
+                        word_left_jean += [word]
+                        tag_left_jean += [tag]
 
-            #generating result in required format
-            words = []
-            words.append(word_dress)
-            words.append(dress_sent_no)
-            words.append(dress_tag_id)
-            words.append(word_jean)
-            words.append(jean_sent_no)
-            words.append(jean_tag_id)
-            words.append(dress_tag_pos)
-            words.append(jean_tag_pos)
-            words.append(kmer_dress)
-            words.append(kmer_jean)
-            tags=[]
-            tags.append(tag_dress)
-            tags.append(tag_jean)
-            yield words,tags
+                dress_right_ex = dress_right_ex.split("\n")
+                if(len(dress_right_ex)<dress_right_tag_pos):
+                    continue
+                for word_tag_pair in dress_right_ex:
+                    word_tag_pair = word_tag_pair.split(" ")
+                    if(len(word_tag_pair)==2):
+                        word,tag = word_tag_pair[0].strip(),word_tag_pair[-1].strip()
+                        if self.processing_word is not None:
+                            word = self.processing_word(word)
+                        if self.processing_tag is not None:
+                            tag = self.processing_tag(tag)
+                        word_right_dress += [word]
+                        tag_right_dress += [tag]
+
+                jean_right_ex = jean_right_ex.split("\n")
+                if(len(jean_right_ex)<jean_right_tag_pos):
+                    continue
+                for word_tag_pair in jean_right_ex:
+                    word_tag_pair = word_tag_pair.split(" ")
+                    if(len(word_tag_pair)==2):
+                        word,tag = word_tag_pair[0].strip(),word_tag_pair[-1].strip()
+                        if self.processing_word is not None:
+                            word = self.processing_word(word)
+                        if self.processing_tag is not None:
+                            tag = self.processing_tag(tag)
+                        word_right_jean += [word]
+                        tag_right_jean += [tag]
+
+                words = []
+                words.append(word_left_dress)       #0
+                words.append(dress_left_sentno)     #1
+                words.append(dress_left_tag_pos)    #2
+                words.append(kmer_left_dress)       #3
+                words.append(word_left_jean)        #4
+                words.append(jean_left_sentno)      #5
+                words.append(jean_left_tag_pos)     #6
+                words.append(kmer_left_jean)        #7
+                words.append(word_right_dress)      #8
+                words.append(dress_right_sentno)    #9
+                words.append(dress_right_tag_pos)   #10
+                words.append(kmer_right_dress)      #11
+                words.append(word_right_jean)       #12
+                words.append(jean_right_sentno)     #13
+                words.append(jean_right_tag_pos)    #14     
+                words.append(kmer_right_jean)       #15
+                words.append(dress_left_tag_id)     #16
+                words.append(jean_left_tag_id)      #17
+                words.append(dress_right_tag_id)    #18
+                words.append(jean_right_tag_id)     #19
+                words.append(dress_left_w_vector)   #20
+                words.append(jean_left_w_vector)    #21
+                words.append(dress_left_w_vector)   #22
+                words.append(jean_left_w_vector)    #23
+                tags=[]
+                tags.append(tag_left_dress)
+                tags.append(tag_left_jean)
+                tags.append(tag_right_dress)
+                tags.append(tag_right_jean)
+                yield words,tags
+
             
 
 
@@ -510,159 +581,234 @@ def minibatches(data, minibatch_size,coupling_data,minibatch_size_coupling):
 
     Yields:
         list of tuples for data and coupling data
-    X = [x_batch,
-         y_batch,words,
-         x_dress, y_dress,
-         words_dress,
-         sent_no_dress,
-         id_central_tag_dress,
-         x_jean, y_jean,
-         words_jean,
-         sent_no_jean,
-         id_central_tag_jean,
-         tag_pos_dress,
-         tag_pos_jean,
-         windowvector_dress
-         windowvector_jean
-         kmer_dress
-         kmer_jean
+    X = [       
+            x_batch             0
+            y_batch             1
+
+            x_left_batch_dress  2
+            y_left_batch_dress  3 
+            dress_left_tag_id   4
+            window_left_dress   5 
+            kmer_left_dress     6 
+
+            x_left_batch_jean   7
+            y_left_batch_jean   8
+            jean_left_tag_id    9
+            window_left_jean    10
+            kmer_left_jean      11
+
+            x_right_batch_dress 12
+            y_right_batch_dress 13
+            dress_right_tag_id  14
+            window_right_dress  15
+            kmer_right_dress    16
+
+            x_right_batch_jean  17
+            y_right_batch_jean  18
+            jean_right_tag_id   19
+            window_right_jean   20
+            kmer_right_jean     21
+            wordPos_left_dress  22
+            wordPos_left_jean   23
+            wordPos_right_dress 24
+            wordPos_right_jean  25
+            
           ]
 
     """
 
-    #print(coupling_data)
-    import pickle
-    with open("data/windowVectors_dress.pkl","rb") as o:
-        dress_dict = pickle.load(o)
-    with open("data/windowVectors_jean.pkl","rb") as p:
-        jean_dict = pickle.load(p)
+
 
     x_batch, y_batch, word= [], [], []
-    x_batch_dress, y_batch_dress, word_dress,x_batch_jean, y_batch_jean, word_jean= [], [], [], [], [], []
-    sent_no_dress,sent_no_jean, id_central_tag_dress, id_central_tag_jean = [],[],[],[]
-    tag_pos_dress,tag_pos_jean = [],[]
-    window_dress, window_jean= [],[]
-    kmer_dress,kmer_jean = [],[]
+    x_left_batch_dress, y_left_batch_dress, word_left_dress = [], [], []
+    x_left_batch_jean, y_left_batch_jean, word_left_jean= [], [], []
+    x_right_batch_dress, y_right_batch_dress, word_right_dress = [], [], []
+    x_right_batch_jean, y_right_batch_jean, word_right_jean= [], [], []
+    dress_left_tag_id, jean_left_tag_id, dress_right_tag_id, jean_right_tag_id = [], [], [], []
+    kmer_right_jean, kmer_right_dress, kmer_left_dress, kmer_left_jean = [], [], [], []
+    window_right_jean, window_right_dress, window_left_dress, window_left_jean = [], [], [], []
+    wordPos_left_dress, wordPos_left_jean, wordPos_right_dress, wordPos_right_jean = [], [], [], []
+
+
+    if coupling_data is not None:
+        data = zip(data,coupling_data)
+
     X = []
+    if(coupling_data is None):
     # for crf loss data
-    for (x, y) in data:
-        #print(str(x[0]))
-        if len(x_batch) == minibatch_size:
-            #print(x_batch)
-            X.append([])
-            X[-1].append(x_batch)
-            X[-1].append(y_batch)
-            X[-1].append(word)
+        for (x,y) in data:
+            if len(x_batch) == minibatch_size:
+                #print(x_batch)
+                X.append(x_batch)
+                X.append(y_batch)
+                X.append(word)
 
-            #yield x_batch, y_batch, word
-            x_batch, y_batch, word = [], [], []
+                yield X
+                X = []
+                x_batch, y_batch, word = [], [], []
 
-        if type(x[0]) == tuple:
-            word += [x]
-            x = zip(*x)
-            #print("Inside if")
-        x_batch += [x]
-        y_batch += [y]
-
-    if len(x_batch) != 0:
-        X.append([])
-        X[-1].append(x_batch)
-        X[-1].append(y_batch)
-        X[-1].append(word)
-
-
-    #for coupling loss data
-    if(coupling_data is not None): # coupling data is set to None for run_evaluate function.
-        i=0       
-        for (x, y) in coupling_data:
-            x_dress = x[0]
-            x_jean = x[3]
-            y_dress=y[0]
-            y_jean = y[1]
-            if i==len(X)-1:
-                break
-
-
-            if len(x_batch_dress) == minibatch_size_coupling:
-                #print(x_batch)               
-                X[i].append(x_batch_dress)
-                X[i].append(y_batch_dress)
-                X[i].append(word_dress)
-                X[i].append(sent_no_dress)
-                X[i].append(id_central_tag_dress)
-
-                X[i].append(x_batch_jean)
-                X[i].append(y_batch_jean)
-                X[i].append(word_jean)
-                X[i].append(sent_no_jean)
-                X[i].append(id_central_tag_jean)
-                X[i].append(tag_pos_dress)
-                X[i].append(tag_pos_jean)
-                X[i].append(window_dress)
-                X[i].append(window_jean)   
-                X[i].append(kmer_dress)
-                X[i].append(kmer_jean)            
-
-                i+=1
-                #yield x_batch, y_batch, word
-                x_batch_dress, y_batch_dress, word_dress,x_batch_jean, y_batch_jean, word_jean= [], [], [], [], [], []
-                sent_no_dress,sent_no_jean, id_central_tag_dress, id_central_tag_jean = [],[],[],[]
-                tag_pos_dress,tag_pos_jean =[],[]
-                window_dress, window_jean = [],[]
-                kmer_dress,kmer_jean = [],[]
-
-
-            if type(x_dress[0]) == tuple:
-                word_dress += [x_dress]
-                x_dress = zip(*x_dress)
+            if type(x[0]) == tuple:
+                word += [x]
+                x = zip(*x)
                 #print("Inside if")
-            x_batch_dress += [x_dress]
-            y_batch_dress += [y_dress]
+            x_batch += [x]
+            y_batch += [y]
 
-            if type(x_jean[0]) == tuple:
-                word_jean += [x_jean]
-                x_jean = zip(*x_jean)
-                #print("Inside if")
-            x_batch_jean += [x_jean]
-            y_batch_jean += [y_jean]  
-            sent_no_dress.append(int(x[1]))
-            sent_no_jean.append(int(x[4]))
-            id_central_tag_dress.append(int(x[2]))
-            id_central_tag_jean.append(int(x[5]))
-            tag_pos_dress.append(x[6])
-            tag_pos_jean.append(x[7])
-            try:
-                window_dress.append(dress_dict[(int(x[1]),x[6])])
-            except:
-                window_dress.append([0]*900)
-            try:
-                window_jean.append(jean_dict[(int(x[4]),x[7])]) 
-            except:
-                window_jean.append([0]*900)
-            kmer_dress.append(x[8])
-            kmer_jean.append(x[9])
-            # print("1",x[8])
+        if len(x_batch) != 0:
+            X.append(x_batch)
+            X.append(y_batch)
+            X.append(word)
+            yield X
+    else:
+        for data_tuple in data:
+            (x,y) = data_tuple[0]
+            (x_coup,y_coup) = data_tuple[1]
+            x_left_dress = x_coup[0]
+            x_left_jean =  x_coup[4]
+            y_left_dress = y_coup[0]
+            y_left_jean =  y_coup[1]
+            x_right_dress =x_coup[8]
+            x_right_jean = x_coup[12]
+            y_right_dress =y_coup[2]
+            y_right_jean = y_coup[3]
+            if len(x_batch) == minibatch_size:
+                X.append(x_batch)
+                X.append(y_batch)
 
-        if len(x_batch_dress) != 0:
-            X[-1].append(x_batch_dress)
-            X[-1].append(y_batch_dress)
-            X[-1].append(word_dress)
-            X[-1].append(sent_no_dress)
-            X[-1].append(id_central_tag_dress)
+                X.append(x_left_batch_dress)
+                X.append(y_left_batch_dress)
+                X.append(dress_left_tag_id)
+                X.append(window_left_dress)
+                X.append(kmer_left_dress)
 
-            X[-1].append(x_batch_jean)
-            X[-1].append(y_batch_jean)
-            X[-1].append(word_jean)
-            X[-1].append(sent_no_jean)
-            X[-1].append(id_central_tag_jean)
-            X[-1].append(tag_pos_dress)
-            X[-1].append(tag_pos_jean)
-            X[-1].append(window_dress)
-            X[-1].append(window_jean)
-            X[-1].append(kmer_dress)
-            X[-1].append(kmer_jean) 
+                X.append(x_left_batch_jean)
+                X.append(y_left_batch_jean)
+                X.append(jean_left_tag_id)
+                X.append(window_left_jean)
+                X.append(kmer_left_jean)
 
-    return X
+                X.append(x_right_batch_dress)
+                X.append(y_right_batch_dress)
+                X.append(dress_right_tag_id)
+                X.append(window_right_dress)
+                X.append(kmer_right_dress)
+
+                X.append(x_right_batch_jean)
+                X.append(y_right_batch_jean)
+                X.append(jean_right_tag_id)
+                X.append(window_right_jean)
+                X.append(kmer_right_jean)
+                X.append(wordPos_left_dress)
+                X.append(wordPos_left_jean)
+                X.append(wordPos_right_dress)
+                X.append(wordPos_right_jean)
+                # print(wordPos_right_jean)
+
+                yield X
+                X = []
+                x_batch, y_batch, word= [], [], []
+                x_left_batch_dress, y_left_batch_dress, word_left_dress = [], [], []
+                x_left_batch_jean, y_left_batch_jean, word_left_jean= [], [], []
+                x_right_batch_dress, y_right_batch_dress, word_right_dress = [], [], []
+                x_right_batch_jean, y_right_batch_jean, word_right_jean= [], [], []
+                dress_left_tag_id, jean_left_tag_id, dress_right_tag_id, jean_right_tag_id = [], [], [], []
+                kmer_right_jean, kmer_right_dress, kmer_left_dress, kmer_left_jean = [], [], [], []
+                window_right_jean, window_right_dress, window_left_dress, window_left_jean = [], [], [], []
+                wordPos_left_dress, wordPos_left_jean, wordPos_right_dress, wordPos_right_jean = [], [], [], []
+
+            if type(x[0]) == tuple:
+                word += [x]
+                x = zip(*x)
+            x_batch += [x]
+            y_batch += [y]
+
+            if type(x_left_dress[0]) == tuple:
+                word_left_dress += [x_left_dress]
+                x_left_dress = zip(*x_left_dress)
+            x_left_batch_dress += [x_left_dress]
+            y_left_batch_dress += [y_left_dress]
+
+            if type(x_left_jean[0]) == tuple:
+                word_left_jean += [x_left_jean]
+                x_left_jean = zip(*x_left_jean)
+            x_left_batch_jean += [x_left_jean]
+            y_left_batch_jean += [y_left_jean]
+
+            if type(x_right_dress[0]) == tuple:
+                word_right_dress += [x_right_dress]
+                x_right_dress = zip(*x_right_dress)
+            x_right_batch_dress += [x_right_dress]
+            y_right_batch_dress += [y_right_dress]
+
+            if type(x_right_jean[0]) == tuple:
+                word_right_jean += [x_right_jean]
+                x_right_jean = zip(*x_right_jean)
+            x_right_batch_jean += [x_right_jean]
+            y_right_batch_jean += [y_right_jean]
+            
+            dress_left_tag_id.append(x_coup[16])
+            jean_left_tag_id.append(x_coup[17])
+            dress_right_tag_id.append(x_coup[18])  
+            jean_right_tag_id.append(x_coup[19])
+
+            window_left_dress.append(x_coup[20])  
+            window_left_jean.append(x_coup[21])  
+            window_right_dress.append(x_coup[22])                   
+            window_right_jean.append(x_coup[23]) 
+
+            kmer_left_dress.append(x_coup[3])  
+            kmer_left_jean.append(x_coup[7])
+            kmer_right_dress.append(x_coup[11])
+            kmer_right_jean.append(x_coup[15])     
+            wordPos_left_dress.append(x_coup[2])  
+            wordPos_left_jean.append(x_coup[6])  
+            wordPos_right_dress.append(x_coup[10])  
+            wordPos_right_jean.append(x_coup[14]) 
+        #skipping last batch which is of size < config.batch_size
+        # if(len(x_batch) != 0):
+        #     X=[]
+        #     X.append(x_batch)
+        #     X.append(y_batch)
+
+        #     X.append(x_left_batch_dress)
+        #     X.append(y_left_batch_dress)
+        #     X.append(dress_left_tag_id)
+        #     X.append(window_left_dress)
+        #     X.append(kmer_left_dress)
+
+        #     X.append(x_left_batch_jean)
+        #     X.append(y_left_batch_jean)
+        #     X.append(jean_left_tag_id)
+        #     X.append(window_left_jean)
+        #     X.append(kmer_left_jean)
+
+        #     X.append(x_right_batch_dress)
+        #     X.append(y_right_batch_dress)
+        #     X.append(dress_right_tag_id)
+        #     X.append(window_right_dress)
+        #     X.append(kmer_right_dress)
+
+        #     X.append(x_right_batch_jean)
+        #     X.append(y_right_batch_jean)
+        #     X.append(jean_right_tag_id)
+        #     X.append(window_right_jean)
+        #     X.append(kmer_right_jean)
+        #     X.append(wordPos_left_dress)
+        #     X.append(wordPos_left_jean)
+        #     X.append(wordPos_right_dress)
+        #     X.append(wordPos_right_jean)
+        #     yield X
+
+
+            
+
+
+
+
+
+
+
+  
 
 
 def get_chunk_type(tok, idx_to_tag):

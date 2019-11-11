@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from .data_utils import minibatches
+
 
 class BaseModel(object):
     """Generic class for general methods that are not specific to NER"""
@@ -114,20 +114,11 @@ class BaseModel(object):
         nepoch_no_imprv = 0 # for early stopping
         self.add_summary() # tensorboard
 
-
-        batch_size_for_crf_loss = self.config.batch_size
-        nbatches = (len(train) + batch_size_for_crf_loss - 1) // batch_size_for_crf_loss
-        batch_size_for_coupling_loss = batch_size_for_crf_loss
-        minibatch_data = minibatches(train, batch_size_for_crf_loss,data_for_coupling,batch_size_for_coupling_loss)
-        dev_data =  minibatches(dev, self.config.batch_size,None,None)
-        import copy, time
         for epoch in range(self.config.nepochs):
-            start = time.time()
             self.logger.info("Epoch {:} out of {:}".format(epoch + 1,
                         self.config.nepochs))
-            copyData = copy.deepcopy(minibatch_data)
-            dev_data_copy = copy.deepcopy(dev_data)
-            score = self.run_epoch(copyData, train, dev_data_copy, epoch,data_for_coupling)
+
+            score = self.run_epoch(train, dev, epoch,data_for_coupling)
             self.config.lr *= self.config.lr_decay # decay learning rate
 
             # early stopping and saving best parameters
@@ -136,10 +127,6 @@ class BaseModel(object):
                 self.save_session()
                 best_score = score
                 self.logger.info("- new best score!")
-            end = time.time()
-            hours, rem = divmod(end-start, 3600)
-            minutes, seconds = divmod(rem, 60)
-            print("\nTime taken in complete epoch :{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
             
 
 
@@ -151,7 +138,7 @@ class BaseModel(object):
 
         """
         self.logger.info("Testing model over test set")
-        metrics = self.run_evaluate(test)
+        metrics = self.run_evaluate(test,k)
         msg = " - ".join(["{} {:04.2f}".format(k, v)
                 for k, v in metrics.items()])
         self.logger.info(msg)

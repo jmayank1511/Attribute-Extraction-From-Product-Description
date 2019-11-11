@@ -17,7 +17,7 @@ class NERModel(BaseModel):
                            self.config.vocab_tags.items()}
         self.idx_to_word = {idx: word for word, idx in self.config.vocab_words.items()}
         self.task =0 
-        self.max_kmer_list_size = 42 # this data is used by convertTagKmerToEmbedding
+        self.max_kmer_list_size = 45# this data is used by convertTagKmerToEmbedding
         self.minibatch_data = None
 
 
@@ -26,56 +26,79 @@ class NERModel(BaseModel):
         # shape = (batch size, max length of sentence in batch)
         self.word_ids = tf.placeholder(tf.int32, shape=[None, None],
                         name="word_ids")
-        self.word_ids_dress_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="word_ids_dress_coup")
-        self.word_ids_jean_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="word_ids_jean_coup")
+        self.word_ids_dress_left_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_ids_dress_left_coup")
+        self.word_ids_jean_left_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_ids_jean_left_coup")
+        self.word_ids_dress_right_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_ids_dress_right_coup")
+        self.word_ids_jean_right_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_ids_jean_right_coup")
 
         # shape = (batch size)
         self.sequence_lengths = tf.placeholder(tf.int32, shape=[None],
                         name="sequence_lengths")
-        self.sequence_lengths_dress_coup = tf.placeholder(tf.int32, shape=[None],
-                        name="sequence_lengths_dress_coup")
-        self.sequence_lengths_jean_coup = tf.placeholder(tf.int32, shape=[None],
-                        name="sequence_lengths_jean_coup")
-        self.sent_no_dress = tf.placeholder(tf.int32,shape=[None],name="sent_no_dress")
-        self.sent_no_jean = tf.placeholder(tf.int32,shape=[None],name="sent_no_jean")
+        self.sequence_lengths_dress_left_coup = tf.placeholder(tf.int32, shape=[None],
+                        name="sequence_lengths_dress_left_coup")
+        self.sequence_lengths_jean_left_coup = tf.placeholder(tf.int32, shape=[None],
+                        name="sequence_lengths_jean_left_coup")
+        self.sequence_lengths_dress_right_coup = tf.placeholder(tf.int32, shape=[None],
+                        name="sequence_lengths_dress_right_coup")
+        self.sequence_lengths_jean_right_coup = tf.placeholder(tf.int32, shape=[None],
+                        name="sequence_lengths_jean_right_coup")
 
-        self.id_central_tag_dress = tf.placeholder(tf.int32,shape=[None],name="id_central_tag_dress")
-        self.id_central_tag_jean = tf.placeholder(tf.int32,shape=[None],name="id_central_tag_jean")
-        self.dress_tag_pos = tf.placeholder(tf.int32,shape=[None],name="dress_tag_pos")
-        self.jean_tag_pos = tf.placeholder(tf.int32,shape=[None],name="jean_tag_pos")
-        self.window_dress  = tf.placeholder(tf.int32,shape=[None,900],name="window_dress")
-        self.window_jean  = tf.placeholder(tf.int32,shape=[None,900],name="window_jean")
-        self.dress_batch_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="dress_batch_kmer_indices")   #[None,self.config.label_embedding_size]
-        self.jean_batch_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="jean_batch_kmer_indices")
-
-
+        self.dress_left_tag_id = tf.placeholder(tf.int32,shape=[None],name="dress_left_tag_id")
+        self.jean_left_tag_id = tf.placeholder(tf.int32,shape=[None],name="jean_left_tag_id")
+        self.dress_right_tag_id = tf.placeholder(tf.int32,shape=[None],name="dress_right_tag_id")
+        self.jean_right_tag_id = tf.placeholder(tf.int32,shape=[None],name="jean_right_tag_id")
+        self.window_left_dress  = tf.placeholder(tf.float32,shape=[None,900],name="window_left_dress")
+        self.window_left_jean  = tf.placeholder(tf.float32,shape=[None,900],name="window_left_jean")
+        self.window_right_dress  = tf.placeholder(tf.float32,shape=[None,900],name="window_right_dress")
+        self.window_right_jean  = tf.placeholder(tf.float32,shape=[None,900],name="window_right_jean")
+        self.dress_left_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="dress_left_kmer_indices")   #[None,self.config.label_embedding_size]
+        self.jean_left_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="jean_left_kmer_indices")
+        self.dress_right_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="dress_right_kmer_indices")   #[None,self.config.label_embedding_size]
+        self.jean_right_kmer_indices = tf.placeholder(tf.int32,shape=[None, self.max_kmer_list_size],name="jean_right_kmer_indices")
+        self.wordPos_left_dress = tf.placeholder(tf.int32,shape=[None],name="wordPos_left_dress")
+        self.wordPos_left_jean = tf.placeholder(tf.int32,shape=[None],name="wordPos_left_jean")
+        self.wordPos_right_dress = tf.placeholder(tf.int32,shape=[None],name="wordPos_right_dress")
+        self.wordPos_right_jean = tf.placeholder(tf.int32,shape=[None],name="wordPos_right_jean")
 
         # shape = (batch size, max length of sentence, max length of word)
         self.char_ids = tf.placeholder(tf.int32, shape=[None, None, None],
                         name="char_ids")
-        self.char_ids_dress_coup = tf.placeholder(tf.int32, shape=[None, None, None],
-                        name="char_ids_dress_coup")
-        self.char_ids_jean_coup = tf.placeholder(tf.int32, shape=[None, None, None],
-                        name="char_ids_jean_coup")
+        self.char_ids_dress_left_coup = tf.placeholder(tf.int32, shape=[None, None, None],
+                        name="char_ids_dress_left_coup")
+        self.char_ids_jean_left_coup = tf.placeholder(tf.int32, shape=[None, None, None],
+                        name="char_ids_jean_left_coup")
+        self.char_ids_dress_right_coup = tf.placeholder(tf.int32, shape=[None, None, None],
+                        name="char_ids_dress_right_coup")
+        self.char_ids_jean_right_coup = tf.placeholder(tf.int32, shape=[None, None, None],
+                        name="char_ids_jean_right_coup")
 
         # shape = (batch_size, max_length of sentence)
         self.word_lengths = tf.placeholder(tf.int32, shape=[None, None],
                         name="word_lengths")
-        self.word_lengths_dress_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="word_lengths_dress_coup")
-        self.word_lengths_jean_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="word_lengths_jean_coup")
+        self.word_lengths_dress_left_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_lengths_dress_left_coup")
+        self.word_lengths_jean_left_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_lengths_jean_left_coup")
+        self.word_lengths_dress_right_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_lengths_dress_right_coup")
+        self.word_lengths_jean_right_coup = tf.placeholder(tf.int32, shape=[None, None],
+                        name="word_lengths_jean_right_coup")
 
         # shape = (batch size, max length of sentence in batch)
-        self.labels = tf.placeholder(tf.int32, shape=[None, None],
-                        name="labels")
-        self.labels_dress_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="labels_dress_coup")
-        self.labels_jean_coup = tf.placeholder(tf.int32, shape=[None, None],
-                        name="labels_jean_coup")
-                        
+        self.y_batch = tf.placeholder(tf.int32, shape=[None, None],
+                        name="y_batch")
+        self.y_left_batch_dress = tf.placeholder(tf.int32, shape=[None, None],
+                        name="y_left_batch_dress")
+        self.y_left_batch_jean = tf.placeholder(tf.int32, shape=[None, None],
+                        name="y_left_batch_jean")
+        self.y_right_batch_dress = tf.placeholder(tf.int32, shape=[None, None],
+                        name="y_right_batch_dress")
+        self.y_right_batch_jean = tf.placeholder(tf.int32, shape=[None, None],
+                        name="y_right_batch_jean")                        
         # hyper parameters
         self.dropout = tf.placeholder(dtype=tf.float32, shape=[],
                         name="dropout")
@@ -92,13 +115,21 @@ class NERModel(BaseModel):
             for kmer in example:
                 list2.append(self.label_dict[kmer])
             for i in range(self.max_kmer_list_size-len(list2)):
-                list2.append(0)
+                list2.append(-1)
             list1.append(list2)
         return list1
 
-         
 
-    def get_feed_dict(self, words, labels=None, words_dress=None,labels_dress=None,sent_no_dress=-1,id_central_tag_dress=-1, words_jean=None, labels_jean=None, sent_no_jean=-1, id_central_tag_jean=-1, dress_tag_pos=-1, jean_tag_pos=-1, window_dress=[], window_jean=[], dress_batch_kmer_indices=[0]*1, jean_batch_kmer_indices = [0]*1, lr=None, dropout=None):
+
+    def get_feed_dict(self, x_batch, y_batch = None,           
+        x_left_batch_dress = None, x_left_batch_jean= None, x_right_batch_dress= None, x_right_batch_jean= None, 
+        y_left_batch_dress = None, y_left_batch_jean = None, y_right_batch_dress = None,y_right_batch_jean = None,
+        dress_left_tag_id = [], jean_left_tag_id = [], dress_right_tag_id = [], jean_right_tag_id = [],
+        window_left_dress = [], window_left_jean = [], window_right_dress = [], window_right_jean = [],
+        dress_left_kmer_indices = [], jean_left_kmer_indices = [], dress_right_kmer_indices = [], jean_right_kmer_indices = [],        
+        wordPos_left_dress =[], wordPos_left_jean =[], wordPos_right_dress =[], wordPos_right_jean =[],
+        lr = None,
+        dropout= None):
 
         """Given some data, pad it and build a feed dictionary
 
@@ -113,91 +144,132 @@ class NERModel(BaseModel):
             dict {placeholder: value}
 
         """
+        
+
         # perform padding of the given data
         if self.config.use_chars:
-            char_ids, word_ids = zip(*words)
+            char_ids, word_ids = zip(*x_batch)
             word_ids, sequence_lengths = pad_sequences(word_ids, 0)
             char_ids, word_lengths = pad_sequences(char_ids, pad_tok=0,
                 nlevels=2)
         else:
-            p = words.copy()
-            word_ids, sequence_lengths = pad_sequences(p, 0)
-        if words_dress is not None  :     
+            word_ids, sequence_lengths = pad_sequences(x_batch, 0)
+        if x_left_batch_dress is not None  :     
             if self.config.use_chars  :
-                char_ids_dress_coup, word_ids_dress_coup = zip(*words_dress)
-                char_ids_jean_coup, word_ids_jean_coup = zip(*words_jean)#char_ids_dress_coup,word_ids_dress_coups
-                word_ids_dress_coup, sequence_lengths_dress_coup = pad_sequences(word_ids_dress_coup, 0)
-                word_ids_jean_coup, sequence_lengths_jean_coup = pad_sequences(word_ids_jean_coup, 0)
-                char_ids_dress_coup, word_lengths_dress_coup = pad_sequences(char_ids_dress_coup, pad_tok=0,nlevels=2)
-                char_ids_jean_coup, word_lengths_jean_coup = pad_sequences(char_ids_jean_coup, pad_tok=0,nlevels=2)
-            else:
-                word_ids_dress_coup, sequence_lengths_dress_coup = pad_sequences(words_dress, 0)
-                word_ids_jean_coup, sequence_lengths_jean_coup = pad_sequences(words_jean, 0)
+                char_ids_dress_left_coup, word_ids_dress_left_coup = zip(*x_left_batch_dress)
+                char_ids_jean_left_coup, word_ids_jean_left_coup = zip(*x_left_batch_jean)
+                char_ids_dress_right_coup, word_ids_dress_right_coup = zip(*x_right_batch_dress)
+                char_ids_jean_right_coup, word_ids_jean_right_coup = zip(*x_right_batch_jean)
 
+                word_ids_dress_left_coup, sequence_lengths_dress_left_coup = pad_sequences(word_ids_dress_left_coup, 0)
+                word_ids_jean_left_coup, sequence_lengths_jean_left_coup = pad_sequences(word_ids_jean_left_coup, 0)
+                word_ids_dress_right_coup, sequence_lengths_dress_right_coup = pad_sequences(word_ids_dress_right_coup, 0)
+                word_ids_jean_right_coup, sequence_lengths_jean_right_coup = pad_sequences(word_ids_jean_right_coup, 0)
+
+                char_ids_dress_left_coup, word_lengths_dress_left_coup = pad_sequences(char_ids_dress_left_coup, pad_tok=0,nlevels=2)
+                char_ids_jean_left_coup, word_lengths_jean_left_coup = pad_sequences(char_ids_jean_left_coup, pad_tok=0,nlevels=2)
+                char_ids_dress_right_coup, word_lengths_dress_right_coup = pad_sequences(char_ids_dress_right_coup, pad_tok=0,nlevels=2)
+                char_ids_jean_right_coup, word_lengths_jean_right_coup = pad_sequences(char_ids_jean_right_coup, pad_tok=0,nlevels=2)
+            else:
+                word_ids_dress_left_coup, sequence_lengths_dress_left_coup = pad_sequences(x_left_batch_dress, 0)
+                word_ids_jean_left_coup, sequence_lengths_jean_left_coup = pad_sequences(x_left_batch_jean, 0)
+                word_ids_dress_right_coup, sequence_lengths_dress_right_coup = pad_sequences(x_right_batch_dress, 0)
+                word_ids_jean_right_coup, sequence_lengths_jean_right_coup = pad_sequences(x_right_batch_jean, 0)
         # build feed dictionary
-        if(words_dress is not None):
+        if(x_left_batch_dress is not None):
             feed = {
                 self.word_ids: word_ids,
                 self.sequence_lengths: sequence_lengths,
-                self.word_ids_dress_coup: word_ids_dress_coup,
-                self.word_ids_jean_coup: word_ids_jean_coup,
-                self.sequence_lengths_dress_coup: sequence_lengths_dress_coup,
-                self.sequence_lengths_jean_coup: sequence_lengths_jean_coup,
-                self.sent_no_dress : sent_no_dress,
-                self.id_central_tag_dress : id_central_tag_dress,
-                self.sent_no_jean : sent_no_jean,
-                self.id_central_tag_jean : id_central_tag_jean,
-                self.dress_tag_pos: dress_tag_pos,
-                self.jean_tag_pos: jean_tag_pos,
-                self.window_dress : window_dress,
-                self.window_jean : window_jean,
-                self.dress_batch_kmer_indices : [[1]*self.config.max_kmer_list_size],
-                self.jean_batch_kmer_indices : [[1]*self.config.max_kmer_list_size]  #jean_batch_kmer_indices
+                self.word_ids_dress_left_coup: word_ids_dress_left_coup,
+                self.word_ids_jean_left_coup: word_ids_jean_left_coup,
+                self.word_ids_dress_right_coup: word_ids_dress_right_coup,
+                self.word_ids_jean_right_coup: word_ids_jean_right_coup,
+                self.sequence_lengths_dress_left_coup: sequence_lengths_dress_left_coup,
+                self.sequence_lengths_jean_left_coup: sequence_lengths_jean_left_coup,
+                self.sequence_lengths_dress_right_coup: sequence_lengths_dress_right_coup,
+                self.sequence_lengths_jean_right_coup: sequence_lengths_jean_right_coup,
+                self.dress_left_tag_id : dress_left_tag_id,
+                self.jean_left_tag_id : jean_left_tag_id,
+                self.dress_right_tag_id : dress_right_tag_id,
+                self.jean_right_tag_id : jean_right_tag_id,
+                self.window_left_dress : window_left_dress,
+                self.window_left_jean : window_left_jean,
+                self.window_right_dress : window_right_dress,
+                self.window_right_jean : window_right_jean,
+                self.dress_left_kmer_indices : dress_left_kmer_indices,
+                self.jean_left_kmer_indices : jean_left_kmer_indices,
+                self.dress_right_kmer_indices : dress_right_kmer_indices,
+                self.jean_right_kmer_indices : jean_right_kmer_indices,
+                self.wordPos_left_dress : wordPos_left_dress,
+                self.wordPos_left_jean : wordPos_left_jean,
+                self.wordPos_right_dress : wordPos_right_dress,
+                self.wordPos_right_jean : wordPos_right_jean
             }
         else:
             feed = {
                 self.word_ids: word_ids,
                 self.sequence_lengths: sequence_lengths,
-                self.word_ids_dress_coup: word_ids,
-                self.word_ids_jean_coup: word_ids,
-                self.sequence_lengths_dress_coup: sequence_lengths,
-                self.sequence_lengths_jean_coup: sequence_lengths,
-                self.sent_no_dress : [-1],
-                self.id_central_tag_dress : [-1],
-                self.sent_no_jean : [-1],
-                self.id_central_tag_jean : [-1],
-                self.dress_tag_pos: [-1],
-                self.jean_tag_pos: [-1],
-                self.window_dress : [[-1]*900],
-                self.window_jean : [[-1]*900],
-                self.dress_batch_kmer_indices :[[1]*self.config.max_kmer_list_size],
-                self.jean_batch_kmer_indices : [[1]*self.config.max_kmer_list_size]
+                self.word_ids_dress_left_coup: word_ids,
+                self.word_ids_jean_left_coup: word_ids,
+                self.word_ids_dress_right_coup: word_ids,
+                self.word_ids_jean_right_coup: word_ids,
+                self.sequence_lengths_dress_left_coup: sequence_lengths,
+                self.sequence_lengths_jean_left_coup: sequence_lengths,
+                self.sequence_lengths_dress_right_coup: sequence_lengths,
+                self.sequence_lengths_jean_right_coup: sequence_lengths,
+                self.dress_left_tag_id : [1],
+                self.jean_left_tag_id : [1],
+                self.dress_right_tag_id : [1],
+                self.jean_right_tag_id : [1],
+                self.window_left_dress : [[-1]*900],
+                self.window_left_jean : [[-1]*900],
+                self.window_right_dress : [[-1]*900],
+                self.window_right_jean : [[-1]*900],
+                self.dress_left_kmer_indices : [[-1]*self.config.max_kmer_list_size],
+                self.jean_left_kmer_indices : [[-1]*self.config.max_kmer_list_size],
+                self.dress_right_kmer_indices : [[-1]*self.config.max_kmer_list_size],
+                self.jean_right_kmer_indices : [[-1]*self.config.max_kmer_list_size],
+                self.wordPos_left_dress : [1],
+                self.wordPos_left_jean : [1],
+                self.wordPos_right_dress : [1],
+                self.wordPos_right_jean : [1]
             }
         if self.config.use_chars:
             feed[self.char_ids] = char_ids
             feed[self.word_lengths] = word_lengths
-        if self.config.use_chars and words_dress is not None:
-            feed[self.char_ids_dress_coup] = char_ids_dress_coup
-            feed[self.word_lengths_dress_coup] = word_lengths_dress_coup
-            feed[self.char_ids_jean_coup] = char_ids_jean_coup
-            feed[self.word_lengths_jean_coup] = word_lengths_jean_coup
+        if self.config.use_chars and x_left_batch_dress is not None:
+            feed[self.char_ids_dress_left_coup] = char_ids_dress_left_coup
+            feed[self.word_lengths_dress_left_coup] = word_lengths_dress_left_coup
+            feed[self.char_ids_jean_left_coup] = char_ids_jean_left_coup
+            feed[self.word_lengths_jean_left_coup] = word_lengths_jean_left_coup
+            feed[self.char_ids_dress_right_coup] = char_ids_dress_right_coup
+            feed[self.word_lengths_dress_right_coup] = word_lengths_dress_right_coup
+            feed[self.char_ids_jean_right_coup] = char_ids_jean_right_coup
+            feed[self.word_lengths_jean_right_coup] = word_lengths_jean_right_coup
         else:
-            feed[self.char_ids_dress_coup] = char_ids
-            feed[self.word_lengths_dress_coup] = word_lengths
-            feed[self.char_ids_jean_coup] = char_ids
-            feed[self.word_lengths_jean_coup] = word_lengths
+            feed[self.char_ids_dress_left_coup] = char_ids
+            feed[self.word_lengths_dress_left_coup] = word_lengths
+            feed[self.char_ids_jean_left_coup] = char_ids
+            feed[self.word_lengths_jean_left_coup] = word_lengths
+            feed[self.char_ids_dress_right_coup] = char_ids
+            feed[self.word_lengths_dress_right_coup] = word_lengths
+            feed[self.char_ids_jean_right_coup] = char_ids
+            feed[self.word_lengths_jean_right_coup] = word_lengths
 
         # print("")
 
-        if labels is not None:
-            labels, _ = pad_sequences(labels, 0)
-            feed[self.labels] = labels
-        if labels_dress is not None:
-            labels_dress_coup, _ = pad_sequences(labels_dress, 0)
-            feed[self.labels_dress_coup] = labels_dress_coup
-            labels_jean_coup, _ = pad_sequences(labels_jean, 0)
-            feed[self.labels_jean_coup] = labels_jean_coup
-
+        if y_batch is not None:
+            y_batch, _ = pad_sequences(y_batch, 0)
+            feed[self.y_batch] = y_batch
+        if y_left_batch_dress is not None:
+            y_left_batch_dress, _ = pad_sequences(y_left_batch_dress, 0)
+            feed[self.y_left_batch_dress] = y_left_batch_dress
+            y_left_batch_jean, _ = pad_sequences(y_left_batch_jean, 0)
+            feed[self.y_left_batch_jean] = y_left_batch_jean
+            y_right_batch_dress, _ = pad_sequences(y_right_batch_dress, 0)
+            feed[self.y_right_batch_dress] = y_right_batch_dress
+            y_right_batch_jean, _ = pad_sequences(y_right_batch_jean, 0)
+            feed[self.y_right_batch_jean] = y_right_batch_jean
         if lr is not None:
             feed[self.lr] = lr
 
@@ -273,47 +345,69 @@ class NERModel(BaseModel):
         with tf.variable_scope("words"):
             if self.config.embeddings is None:
                 self.logger.info("WARNING: randomly initializing word vectors")
-                _word_embeddings_dress_coup = tf.get_variable(
-                        name="_word_embeddings_dress_coup",
+                _word_embeddings_dress_left_coup = tf.get_variable(
+                        name="_word_embeddings_dress_left_coup",
                         dtype=tf.float32,
                         shape=[self.config.nwords, self.config.dim_word])
-                _word_embeddings_jean_coup = tf.get_variable(
-                        name="_word_embeddings_jean_coup",
+                _word_embeddings_jean_left_coup = tf.get_variable(
+                        name="_word_embeddings_jean_left_coup",
+                        dtype=tf.float32,
+                        shape=[self.config.nwords, self.config.dim_word])
+                _word_embeddings_dress_left_coup = tf.get_variable(
+                        name="_word_embeddings_dress_left_coup",
+                        dtype=tf.float32,
+                        shape=[self.config.nwords, self.config.dim_word])
+                _word_embeddings_jean_left_coup = tf.get_variable(
+                        name="_word_embeddings_jean_left_coup",
                         dtype=tf.float32,
                         shape=[self.config.nwords, self.config.dim_word])
             else:
-                _word_embeddings_dress_coup = tf.Variable(
+                _word_embeddings_dress_left_coup = tf.Variable(
                         self.config.embeddings,
-                        name="_word_embeddings_dress_coup",
+                        name="_word_embeddings_dress_left_coup",
                         dtype=tf.float32,
                         trainable=self.config.train_embeddings)
-                _word_embeddings_jean_coup = tf.Variable(
+                _word_embeddings_jean_left_coup = tf.Variable(
                         self.config.embeddings,
-                        name="_word_embeddings_jean_coup",
+                        name="_word_embeddings_jean_left_coup",
+                        dtype=tf.float32,
+                        trainable=self.config.train_embeddings)
+                _word_embeddings_dress_right_coup = tf.Variable(
+                        self.config.embeddings,
+                        name="_word_embeddings_dress_right_coup",
+                        dtype=tf.float32,
+                        trainable=self.config.train_embeddings)
+                _word_embeddings_jean_right_coup = tf.Variable(
+                        self.config.embeddings,
+                        name="_word_embeddings_jean_right_coup",
                         dtype=tf.float32,
                         trainable=self.config.train_embeddings)
 
-            word_embeddings_dress_coup = tf.nn.embedding_lookup(_word_embeddings_dress_coup,
-                    self.word_ids_dress_coup, name="word_embeddings_dress_coup")
-            word_embeddings_jean_coup = tf.nn.embedding_lookup(_word_embeddings_jean_coup,
-                    self.word_ids_jean_coup, name="word_embeddings_jean_coup")
+            word_embeddings_dress_left_coup = tf.nn.embedding_lookup(_word_embeddings_dress_left_coup,
+                    self.word_ids_dress_left_coup, name="word_embeddings_dress_left_coup")
+            word_embeddings_jean_left_coup = tf.nn.embedding_lookup(_word_embeddings_jean_left_coup,
+                    self.word_ids_jean_left_coup, name="word_embeddings_jean_left_coup")
+            word_embeddings_dress_right_coup = tf.nn.embedding_lookup(_word_embeddings_dress_right_coup,
+                    self.word_ids_dress_right_coup, name="word_embeddings_dress_right_coup")
+            word_embeddings_jean_right_coup = tf.nn.embedding_lookup(_word_embeddings_jean_right_coup,
+                    self.word_ids_jean_right_coup, name="word_embeddings_jean_right_coup")
 
-        with tf.variable_scope("chars_"):
+        with tf.variable_scope("chars_",reuse = tf.AUTO_REUSE):
             if self.config.use_chars:
                 # get char embeddings matrix
-                #for dress
-                _char_embeddings_dress_coup = tf.get_variable(
-                        name="_char_embeddings_dress_coup",
+                #for dress_left
+                _char_embeddings_dress_left_coup = tf.get_variable(
+                        name="_char_embeddings_dress_left_coup",
                         dtype=tf.float32,
                         shape=[self.config.nchars, self.config.dim_char])
-                char_embeddings_dress_coup = tf.nn.embedding_lookup(_char_embeddings_dress_coup,
-                        self.char_ids_dress_coup, name="char_embeddings_dress_coup")
+                char_embeddings_dress_left_coup = tf.nn.embedding_lookup(_char_embeddings_dress_left_coup,
+                        self.char_ids_dress_left_coup, name="char_embeddings_dress_left_coup")
 
                 # put the time dimension on axis=1
-                s = tf.shape(char_embeddings_dress_coup)
-                char_embeddings_dress_coup = tf.reshape(char_embeddings_dress_coup,
+                s = tf.shape(char_embeddings_dress_left_coup)
+                char_embeddings_dress_left_coup = tf.reshape(char_embeddings_dress_left_coup,
                         shape=[s[0]*s[1], s[-2], self.config.dim_char])
-                word_lengths_dress_coup = tf.reshape(self.word_lengths_dress_coup, shape=[s[0]*s[1]])
+                word_lengths_dress_left_coup = tf.reshape(self.word_lengths_dress_left_coup, shape=[s[0]*s[1]])
 
                 # bi lstm on chars
                 cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
@@ -321,33 +415,23 @@ class NERModel(BaseModel):
                 cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
                         state_is_tuple=True)
                 _output = tf.nn.bidirectional_dynamic_rnn(
-                        cell_fw, cell_bw, char_embeddings_dress_coup,
-                        sequence_length=word_lengths_dress_coup, dtype=tf.float32)
-        self.word_embeddings_dress_coup =  tf.nn.dropout(word_embeddings_dress_coup, self.dropout)
+                        cell_fw, cell_bw, char_embeddings_dress_left_coup,
+                        sequence_length=word_lengths_dress_left_coup, dtype=tf.float32)
         
-        with tf.variable_scope("chars__"):
-                #for jean
-                # read and concat output
-                _, ((_, output_fw), (_, output_bw)) = _output
-                output = tf.concat([output_fw, output_bw], axis=-1)
 
-                # shape = (batch size, max sentence length, char hidden size)
-                output = tf.reshape(output,
-                        shape=[s[0], s[1], 2*self.config.hidden_size_char])
-                word_embeddings_jean_coup = tf.concat([word_embeddings_jean_coup, output], axis=-1)
-
-                _char_embeddings_jean_coup = tf.get_variable(
-                        name="_char_embeddings_jean_coup",
+                #for jean_left
+                _char_embeddings_jean_left_coup = tf.get_variable(
+                        name="_char_embeddings_jean_left_coup",
                         dtype=tf.float32,
                         shape=[self.config.nchars, self.config.dim_char])
-                char_embeddings_jean_coup = tf.nn.embedding_lookup(_char_embeddings_jean_coup,
-                        self.char_ids_jean_coup, name="char_embeddings_jean_coup")
+                char_embeddings_jean_left_coup = tf.nn.embedding_lookup(_char_embeddings_jean_left_coup,
+                        self.char_ids_jean_left_coup, name="char_embeddings_jean_left_coup")
 
                 # put the time dimension on axis=1
-                s = tf.shape(char_embeddings_jean_coup)
-                char_embeddings_jean_coup = tf.reshape(char_embeddings_jean_coup,
+                s = tf.shape(char_embeddings_jean_left_coup)
+                char_embeddings_jean_left_coup = tf.reshape(char_embeddings_jean_left_coup,
                         shape=[s[0]*s[1], s[-2], self.config.dim_char])
-                word_lengths_jean_coup = tf.reshape(self.word_lengths_jean_coup, shape=[s[0]*s[1]])
+                word_lengths_jean_left_coup = tf.reshape(self.word_lengths_jean_left_coup, shape=[s[0]*s[1]])
 
                 # bi lstm on chars
                 cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
@@ -355,18 +439,59 @@ class NERModel(BaseModel):
                 cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
                         state_is_tuple=True)
                 _output = tf.nn.bidirectional_dynamic_rnn(
-                        cell_fw, cell_bw, char_embeddings_jean_coup,
-                        sequence_length=word_lengths_jean_coup, dtype=tf.float32)
+                        cell_fw, cell_bw, char_embeddings_jean_left_coup,
+                        sequence_length=word_lengths_jean_left_coup, dtype=tf.float32)
 
-                # read and concat output
-                _, ((_, output_fw), (_, output_bw)) = _output
-                output = tf.concat([output_fw, output_bw], axis=-1)
+                #for dress_right
+                _char_embeddings_dress_right_coup = tf.get_variable(
+                        name="_char_embeddings_dress_right_coup",
+                        dtype=tf.float32,
+                        shape=[self.config.nchars, self.config.dim_char])
+                char_embeddings_dress_right_coup = tf.nn.embedding_lookup(_char_embeddings_dress_right_coup,
+                        self.char_ids_dress_right_coup, name="char_embeddings_dress_right_coup")
 
-                # shape = (batch size, max sentence length, char hidden size)
-                output = tf.reshape(output,
-                        shape=[s[0], s[1], 2*self.config.hidden_size_char])
-                word_embeddings_jean_coup = tf.concat([word_embeddings_jean_coup, output], axis=-1)
-        self.word_embeddings_jean_coup =  tf.nn.dropout(word_embeddings_jean_coup, self.dropout)
+                # put the time dimension on axis=1
+                s = tf.shape(char_embeddings_dress_right_coup)
+                char_embeddings_dress_right_coup = tf.reshape(char_embeddings_dress_right_coup,
+                        shape=[s[0]*s[1], s[-2], self.config.dim_char])
+                word_lengths_dress_right_coup = tf.reshape(self.word_lengths_dress_right_coup, shape=[s[0]*s[1]])
+
+                # bi lstm on chars
+                cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
+                        state_is_tuple=True)
+                cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
+                        state_is_tuple=True)
+                _output = tf.nn.bidirectional_dynamic_rnn(
+                        cell_fw, cell_bw, char_embeddings_dress_right_coup,
+                        sequence_length=word_lengths_dress_right_coup, dtype=tf.float32)
+        
+
+                #for jean_right
+                _char_embeddings_jean_right_coup = tf.get_variable(
+                        name="_char_embeddings_jean_right_coup",
+                        dtype=tf.float32,
+                        shape=[self.config.nchars, self.config.dim_char])
+                char_embeddings_jean_right_coup = tf.nn.embedding_lookup(_char_embeddings_jean_right_coup,
+                        self.char_ids_jean_right_coup, name="char_embeddings_jean_right_coup")
+
+                # put the time dimension on axis=1
+                s = tf.shape(char_embeddings_jean_right_coup)
+                char_embeddings_jean_right_coup = tf.reshape(char_embeddings_jean_right_coup,
+                        shape=[s[0]*s[1], s[-2], self.config.dim_char])
+                word_lengths_jean_right_coup = tf.reshape(self.word_lengths_jean_right_coup, shape=[s[0]*s[1]])
+
+                # bi lstm on chars
+                cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
+                        state_is_tuple=True)
+                cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_char,
+                        state_is_tuple=True)
+                _output = tf.nn.bidirectional_dynamic_rnn(
+                        cell_fw, cell_bw, char_embeddings_jean_right_coup,
+                        sequence_length=word_lengths_jean_right_coup, dtype=tf.float32)                        
+        self.word_embeddings_dress_left_coup =  tf.nn.dropout(word_embeddings_dress_left_coup, self.dropout)
+        self.word_embeddings_jean_left_coup =  tf.nn.dropout(word_embeddings_jean_left_coup, self.dropout)
+        self.word_embeddings_dress_right_coup =  tf.nn.dropout(word_embeddings_dress_right_coup, self.dropout)
+        self.word_embeddings_jean_right_coup =  tf.nn.dropout(word_embeddings_jean_right_coup, self.dropout)
 
     def findKmers(self, tag, k):
         if(tag=='O'):
@@ -406,11 +531,11 @@ class NERModel(BaseModel):
         As it is a tensor varialbe, we need to make it all zeros again and again
         as it will be updated after each epoch
         """
-        k_mers = tf.Variable(tf.random_normal([len(vocab)+1,embsize], stddev=0.1),name="label_embedding")
+        k_mers = tf.Variable(tf.random_normal([len(vocab),embsize], stddev=0.1),name="label_embedding", dtype = tf.float32)
         self.k_mers = k_mers
         table = {}
         for idx,key in enumerate(vocab):
-            table[key]=idx+1
+            table[key]=idx
         self.label_dict = table
         """
         label_dict will give the index of given two mer 
@@ -446,19 +571,11 @@ class NERModel(BaseModel):
             #print "Main output"
             #print output
 
-        with tf.variable_scope("proj"):
+        with tf.variable_scope("proj", reuse = tf.AUTO_REUSE):
             W = tf.get_variable("W", dtype=tf.float32,
                     shape=[2*self.config.hidden_size_lstm, self.config.ntags])
-            self.w = W
-            #print "Main W"
-            #print W
-
             b = tf.get_variable("b", shape=[self.config.ntags],
                     dtype=tf.float32, initializer=tf.zeros_initializer())
-            self.b =b
-            #print "Main B"
-            #print b
-
             nsteps = tf.shape(output)[1]
             #print "nsteps"
             #print nsteps
@@ -482,8 +599,7 @@ class NERModel(BaseModel):
     def add_loss_op(self):
         """Defines the loss"""
         if self.config.use_crf:
-            self.labels = tf.Print(self.labels,[self.labels])
-            log_likelihood, trans_params = tf.contrib.crf.crf_log_likelihood(self.logits, self.labels, self.sequence_lengths)
+            log_likelihood, trans_params = tf.contrib.crf.crf_log_likelihood(self.logits, self.y_batch, self.sequence_lengths)
             #init_op = tf.initialize_all_variables()
             #with tf.Session() as sess:
                 #sess.run(init_op) 
@@ -548,85 +664,139 @@ class NERModel(BaseModel):
 
     
     def add_coupling_loss_me(self):
-        #For Dress
-        with tf.variable_scope("bi-lstm2"):
-
+        #For Dress_left
+        with tf.variable_scope("bi-lstm2", reuse = tf.AUTO_REUSE):
             cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
             cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
             (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(
-                    cell_fw, cell_bw, self.word_embeddings_dress_coup,
-                    sequence_length=self.sequence_lengths_dress_coup, dtype=tf.float32)
+                    cell_fw, cell_bw, self.word_embeddings_dress_left_coup,
+                    sequence_length=self.sequence_lengths_dress_left_coup, dtype=tf.float32)
             output = tf.concat([output_fw, output_bw], axis=-1)
             output = tf.nn.dropout(output, self.dropout)
-            #print "Main output"
-            #print output
-
-        with tf.variable_scope("proj"):
+        with tf.variable_scope("proj", reuse = tf.AUTO_REUSE):
+            W = tf.get_variable("W", dtype=tf.float32,
+                    shape=[2*self.config.hidden_size_lstm, self.config.ntags])
+            b = tf.get_variable("b", shape=[self.config.ntags],
+                    dtype=tf.float32, initializer=tf.zeros_initializer())
             nsteps = tf.shape(output)[1]
-            #print "nsteps"
-            #print nsteps
             output = tf.reshape(output, [-1, 2*self.config.hidden_size_lstm])
-            #print "New output"
-            #print output
-            pred = tf.matmul(output, self.w) + self.b
-            #print "pred"
-            #print pred
-            self.logits_dress_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
-
-        #For Jean
-        with tf.variable_scope("bi-lstm2_"):
-
+            pred = tf.matmul(output, W) + b
+            self.logits_dress_left_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
+        #For jean_left
+        with tf.variable_scope("bi-lstm2", reuse = tf.AUTO_REUSE):
             cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
             cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
             (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(
-                    cell_fw, cell_bw, self.word_embeddings_jean_coup,
-                    sequence_length=self.sequence_lengths_jean_coup, dtype=tf.float32)
+                    cell_fw, cell_bw, self.word_embeddings_jean_left_coup,
+                    sequence_length=self.sequence_lengths_jean_left_coup, dtype=tf.float32)
             output = tf.concat([output_fw, output_bw], axis=-1)
             output = tf.nn.dropout(output, self.dropout)
-
-        with tf.variable_scope("proj"):
+        with tf.variable_scope("proj", reuse = tf.AUTO_REUSE):
+            W = tf.get_variable("W", dtype=tf.float32,
+                    shape=[2*self.config.hidden_size_lstm, self.config.ntags])
+            b = tf.get_variable("b", shape=[self.config.ntags],
+                    dtype=tf.float32, initializer=tf.zeros_initializer())
             nsteps = tf.shape(output)[1]
             output = tf.reshape(output, [-1, 2*self.config.hidden_size_lstm])
-            pred = tf.matmul(output, self.w) + self.b
-            self.logits_jean_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
+            pred = tf.matmul(output, W) + b
+            self.logits_jean_left_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
+                #For Dress_right
+        with tf.variable_scope("bi-lstm2", reuse = tf.AUTO_REUSE):
+            cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
+            cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
+            (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(
+                    cell_fw, cell_bw, self.word_embeddings_dress_right_coup,
+                    sequence_length=self.sequence_lengths_dress_right_coup, dtype=tf.float32)
+            output = tf.concat([output_fw, output_bw], axis=-1)
+            output = tf.nn.dropout(output, self.dropout)
+        with tf.variable_scope("proj", reuse = tf.AUTO_REUSE):
+            W = tf.get_variable("W", dtype=tf.float32,
+                    shape=[2*self.config.hidden_size_lstm, self.config.ntags])
+            b = tf.get_variable("b", shape=[self.config.ntags],
+                    dtype=tf.float32, initializer=tf.zeros_initializer())
+            nsteps = tf.shape(output)[1]
+            output = tf.reshape(output, [-1, 2*self.config.hidden_size_lstm])
+            pred = tf.matmul(output, W) + b
+            self.logits_dress_right_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
+        #For jean_right
+        with tf.variable_scope("bi-lstm2", reuse = tf.AUTO_REUSE):
+            cell_fw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
+            cell_bw = tf.contrib.rnn.LSTMCell(self.config.hidden_size_lstm)
+            (output_fw, output_bw), _ = tf.nn.bidirectional_dynamic_rnn(
+                    cell_fw, cell_bw, self.word_embeddings_jean_right_coup,
+                    sequence_length=self.sequence_lengths_jean_right_coup, dtype=tf.float32)
+            output = tf.concat([output_fw, output_bw], axis=-1)
+            output = tf.nn.dropout(output, self.dropout)
+        with tf.variable_scope("proj", reuse = tf.AUTO_REUSE):
+            W = tf.get_variable("W", dtype=tf.float32,
+                    shape=[2*self.config.hidden_size_lstm, self.config.ntags])
+            b = tf.get_variable("b", shape=[self.config.ntags],
+                    dtype=tf.float32, initializer=tf.zeros_initializer())
+            nsteps = tf.shape(output)[1]
+            output = tf.reshape(output, [-1, 2*self.config.hidden_size_lstm])
+            pred = tf.matmul(output, W) + b
+            self.logits_jean_right_coup = tf.reshape(pred, [-1, nsteps, self.config.ntags])
+
         
-        #iters = tf.constant(self.config.batch_size_coup)
-        iters = tf.Print(self.config.batch_size_coup,[self.config.batch_size_coup])
+        iters = tf.constant(self.config.batch_size_coup)
         w_alpha_left = tf.Variable(tf.random_normal([900], stddev=0.1),name="left")
         w_alpha_right = tf.Variable(tf.random_normal([900], stddev=0.1),name="right")
-        def cond(cp_loss, i, iters):
+
+        sentno = tf.constant([i for i in range(self.config.batch_size)])
+        indices_left_dress = tf.stack([sentno,self.wordPos_left_dress,self.dress_left_tag_id], axis = 1)
+        indices_left_jean = tf.stack([sentno,self.wordPos_left_jean,self.jean_left_tag_id], axis = 1)
+        indices_right_dress = tf.stack([sentno,self.wordPos_right_dress,self.dress_right_tag_id], axis = 1)
+        indices_right_jean = tf.stack([sentno,self.wordPos_right_jean,self.jean_right_tag_id], axis = 1)
+        scores_left_dress = tf.gather_nd(self.logits_dress_left_coup,indices_left_dress)
+        scores_left_jean = tf.gather_nd(self.logits_jean_left_coup,indices_left_jean)
+        scores_right_dress = tf.gather_nd(self.logits_dress_right_coup,indices_right_dress)
+        scores_right_jean = tf.gather_nd(self.logits_jean_right_coup,indices_right_jean)
+        scores_left = tf.abs(tf.subtract(scores_left_dress,scores_left_jean))
+        scores_right = tf.abs(tf.subtract(scores_right_dress,scores_right_jean))
+        dress_left = tf.multiply(self.window_left_dress,w_alpha_left)
+        dress_left = tf.multiply(dress_left,self.window_left_jean)  
+        dress_left = tf.reduce_sum(dress_left, axis = 1)
+        A = tf.nn.softmax(dress_left)
+        A /= 900
+        jean_right = tf.multiply(self.window_right_jean,w_alpha_right)
+        jean_right = tf.multiply(jean_right,self.window_right_dress)
+        jean_right = tf.reduce_sum(jean_right, axis = 1)
+        A_ = tf.nn.softmax(jean_right)
+        A_ /= 900
+
+        iters = tf.constant(self.config.batch_size_coup)
+        def cond(cp_loss,i, iters):
             return tf.less(i, iters) 
-        def body(cp_loss, i, iters):
-            abs  = tf.abs(tf.subtract(self.logits_dress_coup[0][i][self.id_central_tag_dress[i]], self.logits_jean_coup[0][i][self.id_central_tag_jean[i]]))
-            As_left = tf.reshape(tf.to_float(self.window_dress[i]),shape=[1,900])
-            v_left  = tf.multiply(As_left,w_alpha_left)
-            temp_left = tf.multiply(v_left,(tf.to_float(self.window_jean)))
-            A = tf.nn.softmax(temp_left)[i]
-            A = tf.multiply(A,abs)
-            As_right = tf.reshape(tf.to_float(self.window_jean[i]),shape=[1,900])
-            v_right  = tf.multiply(As_right,w_alpha_right)
-            temp_right = tf.multiply(v_right,(tf.to_float(self.window_dress)))
-            A_ = tf.nn.softmax(temp_right)[i]
-            A_ = tf.multiply(A_,abs)
-            val = A+A_
-            cp_loss+=tf.reduce_mean(val)
+        def body(cp_loss,i, iters):
+            valid_indices = tf.where(tf.not_equal(self.dress_left_kmer_indices[i],-1))  # stripping off those -1 padding bits
+            dress_left_kmer_indices_ = tf.gather(self.dress_left_kmer_indices[i],valid_indices)   # required unpadded tensor
+            kmer_left_dress = tf.gather(self.k_mers,dress_left_kmer_indices_,axis=0)  
+            kmer_left_dress = tf.reduce_sum(kmer_left_dress,axis = 0)   # final embedding of label i
+            valid_indices = tf.where(tf.not_equal(self.jean_left_kmer_indices[i],-1))
+            jean_left_kmer_indices_ = tf.gather(self.jean_left_kmer_indices[i],valid_indices)
+            kmer_left_jean = tf.gather(self.k_mers,jean_left_kmer_indices_,axis=0)
+            kmer_left_jean = tf.reduce_sum(kmer_left_jean,axis = 0)
+            valid_indices = tf.where(tf.not_equal(self.dress_right_kmer_indices[i],-1))  
+            dress_right_kmer_indices_ = tf.gather(self.dress_right_kmer_indices[i],valid_indices)   
+            kmer_right_dress = tf.gather(self.k_mers,dress_right_kmer_indices_,axis=0)  
+            kmer_right_dress = tf.reduce_sum(kmer_right_dress,axis = 0)   
+            valid_indices = tf.where(tf.not_equal(self.jean_right_kmer_indices[i],-1))
+            jean_right_kmer_indices_ = tf.gather(self.jean_right_kmer_indices[i],valid_indices)
+            kmer_right_jean = tf.gather(self.k_mers,jean_right_kmer_indices_,axis=0)
+            kmer_right_jean = tf.reduce_sum(kmer_right_jean,axis = 0)
+            kmer_left = tf.reduce_sum(tf.multiply(kmer_left_dress,kmer_left_jean))
+            kmer_right = tf.reduce_sum(tf.multiply(kmer_right_dress,kmer_right_jean))
+            kmer_left *= (1/self.config.label_embedding_size)       #tf scalar
+            kmer_right *= (1/self.config.label_embedding_size)    
+            x = tf.multiply(tf.add(A[i],kmer_left),scores_left[i])
+            y = tf.multiply(tf.add(A_[i],kmer_right),scores_right[i]) 
+            z = tf.add(tf.abs(x),tf.abs(y))
+            cp_loss = tf.add(cp_loss,z)  
             return [cp_loss, tf.add(i, 1), iters]
-        cp_loss = tf.constant(0.0,tf.float32)
-        label_label_emb_loss = tf.constant(0.0)
-        if(self.config.use_kmer):
-            kmer_dress = tf.gather(self.k_mers,self.dress_batch_kmer_indices,axis=0)
-            kmer_dress = tf.reduce_sum(kmer_dress,axis = 1)
-            kmer_jean = tf.gather(self.k_mers,self.jean_batch_kmer_indices,axis=0)
-            kmer_dress = tf.reduce_sum(kmer_dress,axis = 1)
-            label_label_emb_loss = tf.reduce_sum(tf.multiply(kmer_dress,tf.transpose(kmer_jean)))
-        tf.while_loop(cond, body, [cp_loss,0,iters])
 
-
-
-        
-        cp_loss*=(1/900) 
-        label_label_emb_loss*=(1/self.config.label_embedding_size)
-        self.loss = self.loss + cp_loss + label_label_emb_loss
+        cp_loss = tf.constant(0.0)
+        cp_loss,_,_ = tf.while_loop(cond, body, [cp_loss,0,iters])
+        self.loss = self.loss + tf.abs(cp_loss) 
         return self.loss
 
 
@@ -742,12 +912,11 @@ class NERModel(BaseModel):
         if self.config.use_crf:
             # get tag scores and transition params of CRF
             viterbi_sequences = []
-            logits, trans_params,logits_dress_coup, logits_jean_coup = None,None,None,None
+            logits, trans_params = None, None
+            logits_dress_left_coup, logits_jean_left_coup, logits_dress_right_coup, logits_jean_right_coup = None,None,None,None
             if perform_op_coup:
-                all_zeros = tf.constant([0.0]*self.config.label_embedding_size)
-                assign_op = self.k_mers[0].assign(all_zeros)
-                a, logits, trans_params,logits_dress_coup, logits_jean_coup = self.sess.run(
-                        [assign_op, self.logits, self.trans_params,self.logits_dress_coup,self.logits_jean_coup], feed_dict=fd)
+                logits, trans_params,logits_dress_left_coup, logits_jean_left_coup, logits_dress_right_coup, logits_jean_right_coup = self.sess.run(
+                        [ self.logits, self.trans_params,self.logits_dress_left_coup, self.logits_jean_left_coup, self.logits_dress_right_coup, self.logits_jean_right_coup], feed_dict=fd)
             else:
                 logits, trans_params = self.sess.run(
                      [self.logits, self.trans_params], feed_dict=fd)
@@ -767,7 +936,7 @@ class NERModel(BaseModel):
 
             return labels_pred, sequence_lengths
 
-    def run_epoch(self, minibatch_data, train, dev, epoch,data_for_copuling):
+    def run_epoch(self, train, dev, epoch,data_for_copuling):
         """Performs one complete pass over the train set and evaluate on dev
 
         Args:
@@ -783,47 +952,85 @@ class NERModel(BaseModel):
         batch_size_for_crf_loss = self.config.batch_size
         nbatches = (len(train) + batch_size_for_crf_loss - 1) // batch_size_for_crf_loss
         prog = Progbar(target=nbatches)
-        for i, returned_data in enumerate(minibatch_data):   
-            words = returned_data[0]
-            labels = returned_data[1]
-            _dummy = returned_data[2]
-            words_dress = returned_data[3]
-            labels_dress = returned_data[4]
-            _dummy_dress = returned_data[5]
-            sent_no_dress = returned_data[6]
-            id_central_tag_dress = returned_data[7]
-            words_jean = returned_data[8]
-            labels_jean = returned_data[9]
-            dummy_jean = returned_data[10]
-            sent_no_jean = returned_data[11]
-            id_central_tag_jean = returned_data[12]
-            dress_tag_pos = returned_data[13]
-            jean_tag_pos = returned_data[14]
-            window_dress = returned_data[15]
-            window_jean = returned_data[16]
-            kmer_dress = returned_data[17]
-            kmer_jean = returned_data[18]
-            dress_batch_kmer_indices = None
-            jean_batch_kmer_indices = None
-            if(self.config.use_kmer ):
-                dress_batch_kmer_indices  = self.convertTagKmerToEmbedding(kmer_dress)
-                jean_batch_kmer_indices = self.convertTagKmerToEmbedding(kmer_jean)
+        #########
+        #todo: calculate batch size for copuling loss calculation
+        batch_size_for_coupling_loss = batch_size_for_crf_loss
 
-            fd, _ = self.get_feed_dict(words, labels,words_dress,labels_dress,sent_no_dress, id_central_tag_dress, words_jean, labels_jean, sent_no_jean, id_central_tag_jean, dress_tag_pos, jean_tag_pos,window_dress,window_jean, dress_batch_kmer_indices, jean_batch_kmer_indices ,lr = self.config.lr,
-                   dropout= self.config.dropout)                 
+        # iterate over dataset
+
+        import time
+        start = time.time()
+        
+        minibatch_data = minibatches(train, batch_size_for_crf_loss,data_for_copuling,batch_size_for_coupling_loss)
+        for i, returned_data in enumerate(minibatch_data):    
+            x_batch             = returned_data[0]     
+            y_batch             = returned_data[1]
+
+            x_left_batch_dress  = returned_data[2]
+            y_left_batch_dress  = returned_data[3]
+            dress_left_tag_id   = returned_data[4]
+            window_left_dress   = returned_data[5]
+            kmer_left_dress     = returned_data[6]
+
+            x_left_batch_jean   = returned_data[7]
+            y_left_batch_jean   = returned_data[8]
+            jean_left_tag_id    = returned_data[9]
+            window_left_jean    = returned_data[10]
+            kmer_left_jean      = returned_data[11]
+
+            x_right_batch_dress = returned_data[12]
+            y_right_batch_dress = returned_data[13]
+            dress_right_tag_id  = returned_data[14]
+            window_right_dress  = returned_data[15]
+            kmer_right_dress    = returned_data[16]
+
+            x_right_batch_jean  = returned_data[17]
+            y_right_batch_jean  = returned_data[18]
+            jean_right_tag_id   = returned_data[19]
+            window_right_jean   = returned_data[20]
+            kmer_right_jean     = returned_data[21]
+
+            wordPos_left_dress  = returned_data[22]
+            wordPos_left_jean   = returned_data[23]
+            wordPos_right_dress = returned_data[24]
+            wordPos_right_jean  = returned_data[25]
+
+            del returned_data   
+
+            dress_left_kmer_indices = None
+            jean_left_kmer_indices = None
+            dress_right_kmer_indices = None
+            jean_right_kmer_indices = None
+            if(self.config.use_kmer ):
+                dress_left_kmer_indices  = self.convertTagKmerToEmbedding(kmer_left_dress)
+                jean_left_kmer_indices = self.convertTagKmerToEmbedding(kmer_left_jean)
+                dress_right_kmer_indices = self.convertTagKmerToEmbedding(kmer_right_dress)
+                jean_right_kmer_indices = self.convertTagKmerToEmbedding(kmer_right_jean)
+
+            fd, _ = self.get_feed_dict(x_batch, y_batch,           
+              x_left_batch_dress, x_left_batch_jean, x_right_batch_dress, x_right_batch_jean, 
+              y_left_batch_dress, y_left_batch_jean, y_right_batch_dress,y_right_batch_jean,
+              dress_left_tag_id, jean_left_tag_id, dress_right_tag_id, jean_right_tag_id,
+              window_left_dress, window_left_jean, window_right_dress, window_right_jean,
+              dress_left_kmer_indices, jean_left_kmer_indices, dress_right_kmer_indices, jean_right_kmer_indices, 
+              wordPos_left_dress, wordPos_left_jean, wordPos_right_dress, wordPos_right_jean,
+              lr = self.config.lr,
+              dropout= self.config.dropout)       
+            st = time.time()           
             _, train_loss, summary = self.sess.run(
                     [self.train_op, self.loss, self.merged], feed_dict=fd)
-            # en = time.time()
-            # hours, rem = divmod(en-st, 3600)
-            # minutes, seconds = divmod(rem, 60)
-            # print("\nSess.run() :{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
-
-
+            en = time.time()
+            hours, rem = divmod(en-st, 3600)
+            minutes, seconds = divmod(rem, 60)
             prog.update(i + 1, [("train loss", train_loss)])
-
             # tensorboard
             if i % 10 == 0:
                 self.file_writer.add_summary(summary, epoch*nbatches + i)
+        end = time.time()
+        hours, rem = divmod(end-start, 3600)
+        minutes, seconds = divmod(rem, 60)
+        print("\nTime Elapsed in this epoch : ")
+        print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
         metrics = self.run_evaluate(dev)
         msg = " - ".join(["{} {:04.2f}".format(k, v)
                 for k, v in metrics.items()])
@@ -832,7 +1039,7 @@ class NERModel(BaseModel):
         return metrics["f1"]
 
 
-    def run_evaluate(self, test ):
+    def run_evaluate(self, test, k ):
         """Evaluates performance on test set
 
         Args:
@@ -844,9 +1051,12 @@ class NERModel(BaseModel):
         """
         accs = []
         out = ''
-        
+        if(k==0):
+            file = open("Task1_actual_pred_labels.txt", "w")
+        else:
+            file = open("Task2_actual_pred_labels.txt", "w")
         correct_preds, total_correct, total_preds = 0., 0., 0.
-        for words, labels, sumit in test:
+        for words, labels, sumit in minibatches(test, self.config.batch_size,None,None):
             labels_pred, sequence_lengths = self.predict_batch(words)
             
             for desc, lab, lab_pred, length in zip(sumit, labels, labels_pred,
@@ -858,6 +1068,8 @@ class NERModel(BaseModel):
                 lab      = lab[:length]
                 lab_pred = lab_pred[:length]
                 accs    += [a==b for (a, b) in zip(lab, lab_pred)]
+                for zz in zip(lab, lab_pred):
+                    file.write(str(zz[0]) + " " + str(zz[1]) +"\n")
 
                 lab_chunks      = set(get_chunks(lab, self.config.vocab_tags))
                 lab_pred_chunks = set(get_chunks(lab_pred,
